@@ -1,6 +1,7 @@
-import { Package, AlertTriangle, TrendingDown, Search, Plus, Pencil, Trash2, Paperclip, Armchair } from "lucide-react";
+import { Package, AlertTriangle, TrendingDown, Search, Plus, Pencil, Trash2, Paperclip, Armchair, Store } from "lucide-react";
 import { useState } from "react";
 import { useInventoryStore, type InventoryItem, type InventoryItemType } from "@/stores/inventoryStore";
+import { useActiveOutlet } from "@/stores/outletStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import InventoryFormModal from "@/components/InventoryFormModal";
@@ -22,6 +23,7 @@ export default function Inventory() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<InventoryItemType | "all">("all");
   const { ingredients, removeItem } = useInventoryStore();
+  const { activeOutlet } = useActiveOutlet();
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
 
@@ -58,7 +60,10 @@ export default function Inventory() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Inventory</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{ingredients.length} items tracked</p>
+          <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
+            <Store className="h-3.5 w-3.5" />
+            {activeOutlet?.name ?? "All outlets"} • {ingredients.length} items tracked
+          </p>
         </div>
         <Button onClick={handleCreate} className="gap-2">
           <Plus className="h-4 w-4" /> Add Item

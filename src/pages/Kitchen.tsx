@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Clock, Check, ChefHat, AlertTriangle, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useOrderStore, type Order } from "@/stores/orderStore";
+import { useActiveOutlet } from "@/stores/outletStore";
 
 type KitchenStatus = "confirmed" | "cooking" | "ready";
 
@@ -25,6 +26,7 @@ const statusLabels: Record<KitchenStatus, string> = {
 
 export default function Kitchen() {
   const { orders, updateOrderStatus, cancelOrder } = useOrderStore();
+  const { activeOutletId, activeOutlet } = useActiveOutlet();
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -32,9 +34,10 @@ export default function Kitchen() {
     return () => clearInterval(interval);
   }, []);
 
-  // Only show confirmed/cooking/ready orders
+  // Only show confirmed/cooking/ready orders for the current outlet
   const kitchenOrders = orders.filter((o) =>
-    o.status === "confirmed" || o.status === "cooking" || o.status === "ready"
+    o.outletId === activeOutletId &&
+    (o.status === "confirmed" || o.status === "cooking" || o.status === "ready")
   );
 
   const nextStatus = (s: Order["status"]): Order["status"] | null => {
@@ -51,7 +54,7 @@ export default function Kitchen() {
             <ChefHat className="h-6 w-6" /> Kitchen Display
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {kitchenOrders.filter((o) => o.status !== "ready").length} active orders
+            {activeOutlet?.name ?? "All outlets"} • {kitchenOrders.filter((o) => o.status !== "ready").length} active orders
           </p>
         </div>
         <div className="flex gap-2">

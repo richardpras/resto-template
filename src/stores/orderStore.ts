@@ -32,6 +32,7 @@ export type Order = {
   id: string;
   code: string;
   source: "pos" | "qr";
+  outletId: string;
   orderType: string;
   items: OrderItem[];
   subtotal: number;
@@ -52,16 +53,27 @@ export type Table = {
   id: string;
   name: string;
   seats: number;
+  outletId: string;
   status: "available" | "occupied" | "waiting-payment";
   orderId?: string;
 };
 
-const defaultTables: Table[] = Array.from({ length: 12 }, (_, i) => ({
-  id: `table-${i + 1}`,
-  name: `Table ${i + 1}`,
-  seats: i < 4 ? 2 : i < 8 ? 4 : 6,
-  status: "available" as const,
-}));
+const defaultTables: Table[] = [
+  ...Array.from({ length: 10 }, (_, i) => ({
+    id: `table-main-${i + 1}`,
+    name: `Table ${i + 1}`,
+    seats: i < 4 ? 2 : i < 8 ? 4 : 6,
+    outletId: "o-main",
+    status: "available" as const,
+  })),
+  ...Array.from({ length: 10 }, (_, i) => ({
+    id: `table-branch-${i + 1}`,
+    name: `Table ${i + 1}`,
+    seats: i < 4 ? 2 : i < 8 ? 4 : 6,
+    outletId: "o-branch",
+    status: "available" as const,
+  })),
+];
 
 type OrderStore = {
   orders: Order[];

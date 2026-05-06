@@ -2,18 +2,8 @@ import { Plus, Search, Edit2, ToggleLeft, ToggleRight, X, Trash2, ChefHat, Setti
 import { useState } from "react";
 import { useInventoryStore, type RecipeItem } from "@/stores/inventoryStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "@/hooks/use-toast";
 
-type MenuItem = {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  available: boolean;
-  emoji: string;
-};
-
-const menuData: MenuItem[] = [
+const menuData = [
   { id: "1", name: "Nasi Goreng Special", category: "Main Course", price: 30000, available: true, emoji: "🍛" },
   { id: "2", name: "Ayam Bakar", category: "Main Course", price: 40000, available: true, emoji: "🍗" },
   { id: "3", name: "Mie Goreng", category: "Main Course", price: 25000, available: true, emoji: "🍝" },
@@ -40,20 +30,10 @@ type EditingRecipe = {
   ingredients: RecipeItem[];
 };
 
-type EditMenuForm = {
-  name: string;
-  category: string;
-  price: string;
-  emoji: string;
-};
-
 export default function MenuManagement() {
   const [search, setSearch] = useState("");
   const [items, setItems] = useState(menuData);
   const [editingRecipe, setEditingRecipe] = useState<EditingRecipe | null>(null);
-  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [editForm, setEditForm] = useState<EditMenuForm>({ name: "", category: "", price: "", emoji: "" });
-  const [editErrors, setEditErrors] = useState<Partial<Record<keyof EditMenuForm, string>>>({});
 
   const { recipes, ingredients, addRecipe, removeRecipe, blockOnInsufficient, setBlockOnInsufficient } = useInventoryStore();
 
@@ -63,65 +43,13 @@ export default function MenuManagement() {
 
   const filtered = items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
 
-  const openRecipeEditor = (menuItem: MenuItem) => {
+  const openRecipeEditor = (menuItem: typeof menuData[0]) => {
     const existing = recipes.find((r) => r.menuItemId === menuItem.id);
     setEditingRecipe({
       menuItemId: menuItem.id,
       menuName: menuItem.name,
       ingredients: existing ? [...existing.ingredients.map((i) => ({ ...i }))] : [],
     });
-  };
-
-  const openItemEditor = (item: MenuItem) => {
-    setEditingItem(item);
-    setEditForm({
-      name: item.name,
-      category: item.category,
-      price: String(item.price),
-      emoji: item.emoji,
-    });
-    setEditErrors({});
-  };
-
-  const validateEditForm = () => {
-    const errors: Partial<Record<keyof EditMenuForm, string>> = {};
-    if (!editForm.name.trim()) errors.name = "Name is required";
-    if (!editForm.category.trim()) errors.category = "Category is required";
-    if (editForm.price.trim() === "") {
-      errors.price = "Price is required";
-    } else if (isNaN(Number(editForm.price)) || Number(editForm.price) < 0) {
-      errors.price = "Price must be a valid positive number";
-    }
-    if (!editForm.emoji.trim()) errors.emoji = "Emoji is required";
-
-    setEditErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const saveItemEdit = () => {
-    if (!editingItem) return;
-    if (!validateEditForm()) return;
-
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === editingItem.id
-          ? {
-              ...item,
-              name: editForm.name.trim(),
-              category: editForm.category.trim(),
-              price: Number(editForm.price),
-              emoji: editForm.emoji.trim(),
-            }
-          : item
-      )
-    );
-
-    toast({
-      title: "Menu item updated",
-      description: `${editForm.name.trim()} has been updated.`,
-    });
-
-    setEditingItem(null);
   };
 
   const addIngredientRow = () => {
@@ -252,12 +180,7 @@ export default function MenuManagement() {
                     </button>
                   </td>
                   <td className="p-4">
-                    <button
-                      onClick={() => openItemEditor(item)}
-                      className="p-2 rounded-lg hover:bg-muted transition-colors"
-                      aria-label={`Edit ${item.name}`}
-                      title={`Edit ${item.name}`}
-                    >
+                    <button className="p-2 rounded-lg hover:bg-muted transition-colors">
                       <Edit2 className="h-4 w-4 text-muted-foreground" />
                     </button>
                   </td>
@@ -368,110 +291,6 @@ export default function MenuManagement() {
                   className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
                 >
                   Save Recipe
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Edit Item Modal */}
-      <AnimatePresence>
-        {editingItem && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-            onClick={() => setEditingItem(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-card rounded-2xl border border-border shadow-xl w-full max-w-md"
-            >
-              <div className="flex items-center justify-between p-5 border-b border-border/50">
-                <div>
-                  <h2 className="text-lg font-bold text-foreground">Edit Menu Item</h2>
-                  <p className="text-sm text-muted-foreground">Update item details</p>
-                </div>
-                <button onClick={() => setEditingItem(null)} className="p-2 rounded-lg hover:bg-muted">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="p-5 space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Item Name</label>
-                  <input
-                    value={editForm.name}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                    className={`w-full px-3 py-2 rounded-lg bg-background border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                      editErrors.name ? "border-destructive" : "border-border"
-                    }`}
-                    placeholder="e.g. Nasi Goreng Special"
-                  />
-                  {editErrors.name && <p className="text-xs text-destructive">{editErrors.name}</p>}
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Category</label>
-                  <input
-                    value={editForm.category}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))}
-                    className={`w-full px-3 py-2 rounded-lg bg-background border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                      editErrors.category ? "border-destructive" : "border-border"
-                    }`}
-                    placeholder="e.g. Main Course"
-                  />
-                  {editErrors.category && <p className="text-xs text-destructive">{editErrors.category}</p>}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Price</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={editForm.price}
-                      onChange={(e) => setEditForm((prev) => ({ ...prev, price: e.target.value }))}
-                      className={`w-full px-3 py-2 rounded-lg bg-background border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                        editErrors.price ? "border-destructive" : "border-border"
-                      }`}
-                      placeholder="0"
-                    />
-                    {editErrors.price && <p className="text-xs text-destructive">{editErrors.price}</p>}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Emoji</label>
-                    <input
-                      value={editForm.emoji}
-                      onChange={(e) => setEditForm((prev) => ({ ...prev, emoji: e.target.value }))}
-                      className={`w-full px-3 py-2 rounded-lg bg-background border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                        editErrors.emoji ? "border-destructive" : "border-border"
-                      }`}
-                      placeholder="🍛"
-                    />
-                    {editErrors.emoji && <p className="text-xs text-destructive">{editErrors.emoji}</p>}
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 border-t border-border/50 flex gap-2">
-                <button
-                  onClick={() => setEditingItem(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={saveItemEdit}
-                  className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-                >
-                  Save
                 </button>
               </div>
             </motion.div>

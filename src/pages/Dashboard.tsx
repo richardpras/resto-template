@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useAuthStore, PERMISSIONS } from "@/stores/authStore";
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { useOrderStore } from "@/stores/orderStore";
+import { useActiveOutlet } from "@/stores/outletStore";
 import { useState } from "react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,10 +46,11 @@ export default function Dashboard() {
   const { user, hasPermission } = useAuthStore();
   const { ingredients } = useInventoryStore();
   const { orders } = useOrderStore();
-  const [outletFilter, setOutletFilter] = useState<string>("all");
+  const canViewAll = hasPermission(PERMISSIONS.DASHBOARD_ALL);
+  const { activeOutletId } = useActiveOutlet();
+  const [outletFilter, setOutletFilter] = useState<string>(canViewAll ? "all" : (activeOutletId ?? "all"));
   const [range, setRange] = useState<string>("today");
 
-  const canViewAll = hasPermission(PERMISSIONS.DASHBOARD_ALL);
   const visibleOutlets = canViewAll ? outletsData : outletsData.filter((o) => user?.outletIds.includes(o.id));
 
   const stats = canViewAll

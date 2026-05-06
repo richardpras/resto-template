@@ -75,6 +75,7 @@ export default function QROrder() {
       id: crypto.randomUUID(),
       code: orderCode,
       source: "qr",
+      outletId: "o-main",
       orderType: "Dine-in",
       items: cart.map((c) => ({ id: c.id, name: c.name, price: c.price, qty: c.qty, emoji: c.emoji, notes: c.notes })),
       subtotal, tax, total,

@@ -1,7 +1,4 @@
-import { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { useAccountingStore } from "@/stores/accountingStore";
 import ChartOfAccounts from "./accounting/ChartOfAccounts";
 import JournalEntries from "./accounting/JournalEntries";
 import GeneralLedger from "./accounting/GeneralLedger";
@@ -9,14 +6,6 @@ import ProfitLoss from "./accounting/ProfitLoss";
 import BalanceSheet from "./accounting/BalanceSheet";
 
 export default function Accounting() {
-  const refreshFromApi = useAccountingStore((s) => s.refreshFromApi);
-
-  useEffect(() => {
-    void refreshFromApi().catch((e) => {
-      toast.error(e instanceof Error ? e.message : "Failed to load accounting data");
-    });
-  }, [refreshFromApi]);
-
   return (
     <div className="p-6 space-y-6">
       <div>

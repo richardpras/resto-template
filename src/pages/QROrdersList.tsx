@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useOrderStore, type Order } from "@/stores/orderStore";
+import { useActiveOutlet } from "@/stores/outletStore";
 import { Clock, CheckCircle2, ChefHat, Package, Eye, X, CreditCard, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -24,11 +25,12 @@ const filters = ["all", "confirmed", "cooking", "ready", "completed"] as const;
 
 export default function QROrders() {
   const { orders, updateOrderStatus, cancelOrder } = useOrderStore();
+  const { activeOutletId, activeOutlet } = useActiveOutlet();
   const [filter, setFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  // Show ALL orders (both POS and QR)
-  const allOrders = orders;
+  // Show orders for the current outlet (both POS and QR)
+  const allOrders = orders.filter((o) => o.outletId === activeOutletId);
   const filtered = filter === "all" ? allOrders : allOrders.filter((o) => o.status === filter);
 
   return (
@@ -36,7 +38,7 @@ export default function QROrders() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">All Orders</h1>
-          <p className="text-sm text-muted-foreground">POS and QR orders in one view</p>
+          <p className="text-sm text-muted-foreground">{activeOutlet?.name ?? "All outlets"} • POS and QR orders in one view</p>
         </div>
         <div className="flex gap-2">
           <span className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-xl font-medium">

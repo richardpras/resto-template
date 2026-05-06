@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useOrderStore, type Order, type PaymentEntry, type SplitPerson } from "@/stores/orderStore";
 import { usePromotionStore, type AppliedPromo } from "@/stores/promotionStore";
 import { useMemberStore, type Member } from "@/stores/memberStore";
+import { useActiveOutlet } from "@/stores/outletStore";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
 
@@ -47,6 +48,7 @@ function formatRp(n: number) { return "Rp " + n.toLocaleString("id-ID"); }
 export default function POS() {
   const { addOrder, confirmOrder, addPayment, setSplitBill, addSplitPayment, tables, updateTableStatus } = useOrderStore();
   const { getBestPromo, getApplicablePromos, incrementUsage } = usePromotionStore();
+  const { activeOutletId, activeOutlet } = useActiveOutlet();
   const [activeCat, setActiveCat] = useState("All");
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -106,12 +108,13 @@ export default function POS() {
   const total = subtotal - discount + tax;
   const totalItems = cart.reduce((sum, c) => sum + c.qty, 0);
 
-  const availableTables = tables.filter((t) => t.status === "available");
+  const availableTables = tables.filter((t) => t.status === "available" && t.outletId === activeOutletId);
 
   const createOrder = (): Order => ({
     id: crypto.randomUUID(),
     code: "POS-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
     source: "pos",
+    outletId: activeOutletId ?? "o-main",
     orderType,
     items: cart.map((c) => ({ id: c.id, name: c.name, price: c.price, qty: c.qty, emoji: c.emoji, notes: c.notes })),
     subtotal, tax, total,

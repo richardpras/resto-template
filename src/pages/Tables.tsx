@@ -1,4 +1,5 @@
 import { useOrderStore } from "@/stores/orderStore";
+import { useActiveOutlet } from "@/stores/outletStore";
 import { motion } from "framer-motion";
 import { Users, Clock, CreditCard, CheckCircle2 } from "lucide-react";
 
@@ -11,7 +12,9 @@ const statusConfig = {
 };
 
 export default function Tables() {
-  const { tables, orders, updateTableStatus } = useOrderStore();
+  const { tables: allTables, orders, updateTableStatus } = useOrderStore();
+  const { activeOutletId, activeOutlet } = useActiveOutlet();
+  const tables = allTables.filter((t) => t.outletId === activeOutletId);
 
   return (
     <div className="p-4 md:p-6">
@@ -21,7 +24,7 @@ export default function Tables() {
             <Users className="h-6 w-6" /> Table Management
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {tables.filter((t) => t.status === "available").length} of {tables.length} tables available
+            {activeOutlet?.name ?? "All outlets"} • {tables.filter((t) => t.status === "available").length} of {tables.length} tables available
           </p>
         </div>
         <div className="flex gap-2">

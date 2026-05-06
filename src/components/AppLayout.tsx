@@ -6,6 +6,7 @@ import { useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { LockScreen } from "@/components/auth/LockScreen";
 import { IdleTracker } from "@/components/auth/ProtectedRoute";
+import { OutletSelector } from "@/components/OutletSelector";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -37,8 +38,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center justify-between border-b bg-card/50 backdrop-blur-sm px-4 sticky top-0 z-30">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <SidebarTrigger />
+              <OutletSelector />
             </div>
             <div className="flex items-center gap-3">
               {online ? (

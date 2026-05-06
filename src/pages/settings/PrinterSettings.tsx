@@ -8,50 +8,23 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, Printer as PrinterIcon } from "lucide-react";
-import { useSettingsStore, Printer, newId, removePrinterCascade } from "@/stores/settingsStore";
+import { useSettingsStore, Printer, newId } from "@/stores/settingsStore";
 import { toast } from "sonner";
-import { ApiHttpError, getApiAccessToken } from "@/lib/api-integration/client";
-import { patchPrinter, postPrinter } from "@/lib/api-integration/settingsDomainEndpoints";
 
-const empty: Printer = { id: "", name: "", printerType: "kitchen", connection: "lan", ip: "", outletId: 0 };
+const empty: Printer = { id: "", name: "", printerType: "kitchen", connection: "lan", ip: "", outletId: "" };
 
 export default function PrinterSettings() {
-  const printers = useSettingsStore((s) => s.printers);
-  const outlets = useSettingsStore((s) => s.outlets);
-  const upsertPrinter = useSettingsStore((s) => s.upsertPrinter);
-  const refreshFromApi = useSettingsStore((s) => s.refreshFromApi);
+  const { printers, outlets, upsertPrinter, deletePrinter } = useSettingsStore();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Printer>(empty);
-  const [saving, setSaving] = useState(false);
 
-  const save = async () => {
+  const save = () => {
     if (!form.name.trim()) return toast.error("Printer name required");
-    if (!form.outletId || form.outletId < 1) return toast.error("Select outlet");
+    if (!form.outletId) return toast.error("Select outlet");
     if (form.connection === "lan" && !form.ip?.trim()) return toast.error("IP address required for LAN");
-    const wasInList = useSettingsStore.getState().printers.some((p) => p.id === form.id);
-    setSaving(true);
-    try {
-      if (!getApiAccessToken()) {
-        upsertPrinter(form);
-        toast.success("Printer saved locally");
-        setOpen(false);
-        return;
-      }
-      const payload: Printer = {
-        ...form,
-        ip: form.connection === "lan" ? form.ip : undefined,
-        bluetoothDevice: form.connection === "bluetooth" ? form.bluetoothDevice : undefined,
-      };
-      const saved = wasInList ? await patchPrinter(form.id, payload) : await postPrinter(payload);
-      upsertPrinter(saved);
-      await refreshFromApi();
-      toast.success("Printer saved");
-      setOpen(false);
-    } catch (e) {
-      toast.error(e instanceof ApiHttpError ? e.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
+    upsertPrinter(form);
+    setOpen(false);
+    toast.success("Printer saved");
   };
 
   const test = () => toast.success("Test print sent (simulated)");
@@ -61,16 +34,7 @@ export default function PrinterSettings() {
       <CardContent className="p-6 space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="font-semibold">Printer Setup</h2>
-          <Button
-            type="button"
-            onClick={() => {
-              setForm({ ...empty, id: newId(), outletId: outlets[0]?.id ?? 0 });
-              setOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Printer
-          </Button>
+          <Button onClick={() => { setForm({ ...empty, id: newId(), outletId: outlets[0]?.id || "" }); setOpen(true); }}><Plus className="h-4 w-4 mr-2" />Add Printer</Button>
         </div>
         <Table>
           <TableHeader>
@@ -91,22 +55,7 @@ export default function PrinterSettings() {
                   <div className="flex gap-1">
                     <Button size="sm" variant="ghost" onClick={test}>Test</Button>
                     <Button size="icon" variant="ghost" onClick={() => { setForm(p); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        if (!confirm("Delete printer?")) return;
-                        void (async () => {
-                          try {
-                            await removePrinterCascade(p.id);
-                            if (getApiAccessToken()) await refreshFromApi();
-                          } catch (e) {
-                            toast.error(e instanceof ApiHttpError ? e.message : "Delete failed");
-                          }
-                        })();
-                      }}
-                    ><Trash2 className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete printer?")) deletePrinter(p.id); }}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -148,19 +97,10 @@ export default function PrinterSettings() {
               )}
               <div className="space-y-2">
                 <Label>Outlet</Label>
-                <Select
-                  value={form.outletId > 0 ? String(form.outletId) : ""}
-                  onValueChange={(v) => setForm({ ...form, outletId: Number(v) })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select outlet" />
-                  </SelectTrigger>
+                <Select value={form.outletId} onValueChange={(v) => setForm({ ...form, outletId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select outlet" /></SelectTrigger>
                   <SelectContent>
-                    {outlets.map((o) => (
-                      <SelectItem key={o.id} value={String(o.id)}>
-                        {o.name}
-                      </SelectItem>
-                    ))}
+                    {outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -172,8 +112,8 @@ export default function PrinterSettings() {
               )}
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
-              <Button type="button" onClick={() => void save()} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button onClick={save}>Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
